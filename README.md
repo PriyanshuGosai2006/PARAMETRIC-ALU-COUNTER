@@ -1,54 +1,73 @@
-# Parametric ALU & 4-bit Counter IP
+# System-on-Chip (SoC) Data Processing Unit
 
-## Project Overview
-This repository contains the RTL design, functional verification, and physical synthesis of two foundational digital IP blocks: a Parametric Arithmetic Logic Unit (ALU) (Combinational) and a 4-bit Synchronous Counter (Sequential). 
+##  Project Overview
+This repository contains a full RTL-to-Synthesis pipeline for a custom digital datapath. The project demonstrates the progression from designing isolated combinational/sequential Intellectual Property (IP) blocks to integrating them into a fully automated, timing-closed System-on-Chip (SoC) architecture.
 
-The objective of this is to establish a rigorous, industry-standard EDA workflow from RTL concept to hardware synthesis.
+The project is structured into two distinct phases to highlight modular design, automated Design Verification (DV), and physical synthesis constraints.
 
-## Toolchain
-* RTL Implementation: SystemVerilog (`logic`, `always_comb`, `always_ff`)
-* Functional Verification (Simulation): Questa Intel FPGA Starter Edition
-* Hardware Synthesis: AMD Vivado 2026.1
-* Target Architecture: Xilinx Artix-7 (`xc7a35tcpg236-1`)
-
-
-
-## Functional Verification (Questa)
-(Demonstrates 100% correct mathematical output across all opcodes, clean clock-edge transitions, and synchronous reset functionality)
-
-<img width="1448" height="697" alt="waveform" src="https://github.com/user-attachments/assets/13dad0fb-0a3b-4c38-9eb5-1826cc04d5b4" />
+##  Toolchain
+* **RTL Implementation:** SystemVerilog (IEEE 1800-2012)
+* **Design Verification:** Questa Intel FPGA Starter Edition (Automated TCL Scripting)
+* **Physical Synthesis & Timing:** AMD Vivado 2026.1
+* **Target Architecture:** Xilinx Artix-7 (`xc7a35tcpg236-1`)
 
 
 
+##  Architecture Breakdown
 
-## Hardware Synthesis (Vivado)
+### [Phase 1: Independent IP Cores](./phase1_independent_ips)
+See the Phase 1 folder for individual unit tests and schematic extractions.
+* **Parametric ALU:** Purely combinational arithmetic unit mapped strictly to LUTs.
+* **4-bit Synchronous Counter:** Sequential state memory mapped to physical flip-flops.
 
-### 1. The Parametric ALU (Combinational IP)
-A purely combinational logic block capable of standard arithmetic and bitwise operations. Designed using modern `always_comb` constructs to prevent unintended latch inference.
+### [Phase 2: SoC Integration & FSM Control](./phase2_soc_integration)
+The IP blocks from Phase 1 are instantiated into a unified Top-Level Wrapper and driven by a custom Moore Finite State Machine (FSM). 
+* **The Control Unit:** The FSM cycles through `IDLE -> COUNT -> COMPUTE -> DONE`, actively managing the enable signals of the Counter and routing opcodes to the ALU.
+* **Datapath Flow:** The Counter generates dynamic data, which is fed directly into the ALU alongside hardcoded constants for real-time mathematical processing.
 
-(Synthesized strictly to Look-Up Tables with 0 inferred memory)
-* Slice LUTs: 40
-* Slice Registers: 0 (Purely Combinational)
 
-Extracted Netlist Schematic:
 
-<img width="1341" height="857" alt="schematic_alu" src="https://github.com/user-attachments/assets/62b06442-4919-4cfd-8053-d34a76180113" />
+##  Automated Design Verification (DV)
 
-### 2. The 4-bit Synchronous Counter (Sequential IP)
-A clock-driven sequential block demonstrating state memory and synchronous reset behavior using `always_ff` constructs.
+Instead of relying on visual waveform inspection, the integrated datapath is verified using a **Self-Checking Testbench**. 
 
-(Successfully mapped to physical flip-flops on the Artix-7 fabric)
-* Slice LUTs: 3
-* Slice Registers: 4
+The testbench automatically asserts the start condition, pauses execution using hardware-driven `wait()` statements until the FSM asserts `valid_out`, and algorithmically compares the ALU output against the expected mathematical result.
 
-Extracted Netlist Schematic:
+**Automated Transcript Log:**
+(Demonstrates 0 errors and successful assertion passes)
 
-<img width="1895" height="622" alt="schematic_counter" src="https://github.com/user-attachments/assets/a9bab774-cc33-41b1-ad65-6c6e03404507" />
+<img width="543" height="422" alt="image" src="https://github.com/user-attachments/assets/66c88246-1de3-421f-bd32-5d53264ff8ba" />
 
----
 
-## How to Run the Simulation
-1. Clone the repository.
-2. Open Questa/ModelSim.
-3. Change directory to the `sim` folder.
-4. Execute `do run.do` to compile the `.sv` files and launch the waveform viewer.
+**FSM State Execution Waveform:**
+(Chronological display of state transitions: Fetching data, pushing opcodes, and raising the valid flag)
+
+<img width="1246" height="277" alt="waveform" src="https://github.com/user-attachments/assets/0c1ff4ed-1501-470b-891e-aabe148cf532" />
+
+
+
+
+##  Physical Synthesis & Timing Closure
+
+The integrated RTL was synthesized and mapped to the Artix-7 physical fabric. To ensure real-world viability, a strict `.xdc` constraint was applied, commanding a **100 MHz System Clock** (10.000 ns period).
+
+The architecture successfully passed Setup and Hold timing analysis with zero negative slack, proving the physical combinational logic paths are highly optimized.
+
+* **Target Clock Frequency:** 100 MHz
+* **Worst Negative Slack (WNS):** +8.295 ns
+* **Maximum Theoretical Operating Frequency:** > 500 MHz
+
+**Vivado Timing Summary Report:**
+
+<img width="1031" height="218" alt="image" src="https://github.com/user-attachments/assets/4a89e55c-b3b6-4b4a-b1f8-3875f507e8f7" />
+
+
+
+
+##  How to Reproduce the Verification Environment
+This repository utilizes a scripted verification workflow. To run the automated testbench:
+1. Clone the repository and open Questa/ModelSim.
+2. Navigate to the `phase1_soc_integration` directory in the transcript terminal.
+3. Execute the automation script:
+   ```tcl
+   do run.do
