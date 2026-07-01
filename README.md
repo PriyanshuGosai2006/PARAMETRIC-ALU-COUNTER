@@ -20,7 +20,7 @@ See the Phase 1 Independent IPs folder for individual unit tests and schematic e
 * **Parametric ALU:** Purely combinational arithmetic unit mapped strictly to LUTs.
 * **4-bit Synchronous Counter:** Sequential state memory mapped to physical flip-flops.
 
-### [Phase 1: SoC Integration & FSM Control](./phase1_soc_integration)
+### [Phase 2: SoC Integration & FSM Control](./phase1_soc_integration)
 The IP blocks from Phase 1 are instantiated into a unified Top-Level Wrapper and driven by a custom Moore Finite State Machine (FSM). 
 * **The Control Unit:** The FSM cycles through `IDLE -> COUNT -> COMPUTE -> DONE`, actively managing the enable signals of the Counter and routing opcodes to the ALU.
 * **Datapath Flow:** The Counter generates dynamic data, which is fed directly into the ALU alongside hardcoded constants for real-time mathematical processing.
